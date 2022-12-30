@@ -4,7 +4,6 @@
 #include <GUIListBox.au3>
 #include <WindowsConstants.au3>
 #include <Array.au3>
-#Region ### START Koda GUI section ### Form=c:\users\zero\documents\text_blocker\form1.kxf
 
 $words = FileReadToArray("words.txt")
 $windowIsHide= True
@@ -16,6 +15,7 @@ Func Close()
 EndFunc
 
 Func _reloadListBoxItems($List1, $words)
+	$words = FileReadToArray("words.txt")
 	GUICtrlSetData($List1, "")
 	GUICtrlSetData($List1, _ArrayToString($words, "|"))
 	_GUICtrlListBox_SetSel($List1)
@@ -29,11 +29,7 @@ Func OpenSettings()
 	$Edit1 = GUICtrlCreateEdit("", 32, 256, 177, 25, BitOR($ES_AUTOVSCROLL,$ES_AUTOHSCROLL,$ES_WANTRETURN))
 	GUICtrlSetData(-1, "Edit1")
 	GUISetState(@SW_SHOW)
-	#EndRegion ### END Koda GUI section ###
 
-	;~ set list items from $words array
-	;~ GUICtrlSetData($List1, _ArrayToString($words, "|"))
-	;~ _GUICtrlListBox_SetSel($List1)
 	_reloadListBoxItems($List1, $words)
 
 	$windowIsHide = False
@@ -45,48 +41,29 @@ Func OpenSettings()
 			Case $GUI_EVENT_CLOSE
 				;~ Exit
 				GUISetState(@SW_HIDE)
-				$windowIsHide = True
-
-			;~ Case $Button1
-				
+				$windowIsHide = True				
 
 		EndSwitch
 
 		Select
 			Case $nMsg = $Button1
-				;~ $selItems = _GUICtrlListBox_GetAnchorIndex($List1)
-				;~ MsgBox(0, $selItems, "Item Selected: " & $words[$selItems]) ; $selItems[1] cooresponds to the the selected text value in this array
-				
-				;~ add item to list and save to words.txt
 				$newWords = GUICtrlRead($Edit1)
-				;~ apped to words.txt
 				if $newWords <> "" Then
 					FileWrite("words.txt", $newWords & @CRLF)
 				EndIf
-				;~ FileWrite("words.txt", $newWords & @CRLF)
-				;~ reload list
-				$words = FileReadToArray("words.txt")
-				;~ clear list box
-				;~ GUICtrlSetData($List1, "")
-				;~ GUICtrlSetData($List1, _ArrayToString($words, "|"))
-				;~ _GUICtrlListBox_SetSel($List1)
 				_reloadListBoxItems($List1, $words)
 
-				;~ clear edit box
+				;~ clear edit box after add
 				GUICtrlSetData($Edit1, "")
 			Case $nMsg = $Button2
-				;~ remove line from words.txt
+				;~ get selected item index in list box to remove
 				$selItems = _GUICtrlListBox_GetAnchorIndex($List1)
-				;~ remove line from words array and write to words.txt
 				_ArrayDelete($words, $selItems)
-				;~ write to words.txt
+				;~ write to new words.txt
 				FileDelete("words.txt")
 				FileWrite("words.txt", _ArrayToString($words, @CRLF))
 				FileWrite("words.txt", @CRLF)
-				;~ clear list
-				;~ GUICtrlSetData($List1, "")
-				;~ GUICtrlSetData($List1, _ArrayToString($words, "|"))
-				;~ _GUICtrlListBox_SetSel($List1)
+
 				_reloadListBoxItems($List1, $words)
 
 		EndSelect
@@ -100,10 +77,11 @@ EndFunc
 
 ;~ #NoTrayIcon
 ;~ #RequireAdmin
+
+;close the active window if contains the word
 Func checkWordInText($text)
 	For $w = 0 To UBound($words) - 1
 		If StringInStr($text, $words[$w]) Then
-			; close the active window
 			WinClose("[active]")
 			Return $words[$w]
 		EndIf
@@ -112,12 +90,9 @@ Func checkWordInText($text)
 EndFunc   ;==>checkWordInText
 
 While True
-	Sleep(1000)
-;~ ConsoleWrite( WinGetTitle("[active]") & @CRLF)
-;~   If checkWordInText(WinGetTitle("[active]")) Then
-;~     ConsoleWrite("Found" & @CRLF)
-;~   EndIf
+	;~ loop every 1 second to check the active window title
 	ConsoleWrite(checkWordInText(WinGetTitle("[active]")) & @CRLF)
+	Sleep(1000)
 WEnd
 
 
