@@ -5,66 +5,81 @@
 #include <WindowsConstants.au3>
 #include <Array.au3>
 
-$words = FileReadToArray("words.txt")
-$windowIsHide= True
+$sWordsFileName = "words.txt"
+$aWords = FileReadToArray($sWordsFileName)
+$windowIsHide = True
+
 HotKeySet("{ESC}", "Close")
 HotKeySet("{F1}", "OpenSettings")
 
 Func Close()
-   Exit
-EndFunc
+	Exit
+EndFunc   ;==>Close
 
-Func _reloadListBoxItems($List1, $words)
-	$words = FileReadToArray("words.txt")
-	GUICtrlSetData($List1, "")
-	GUICtrlSetData($List1, _ArrayToString($words, "|"))
-	_GUICtrlListBox_SetSel($List1)
-EndFunc
+Func _ReloadListBoxItems($WordsList)
+	$LISTBOX_SEPARATOR = "|"
+	$aWords = FileReadToArray($sWordsFileName)
+	GUICtrlSetData($WordsList, "")
+	$sWordsList = _ArrayToString($aWords, $LISTBOX_SEPARATOR)
+	GUICtrlSetData($WordsList, $sWordsList)
+	_GUICtrlListBox_SetSel($WordsList)
+EndFunc   ;==>_ReloadListBoxItems
+
+Func _SaveWordsToFile($aWords = $aWords)
+	FileDelete($sWordsFileName)
+	FileWrite($sWordsFileName, _ArrayToString($aWords, @CRLF))
+	FileWrite($sWordsFileName, @CRLF)
+EndFunc   ;==>_SaveWordsToFile
+
+Func _InsertWord($newWord, $aWords)
+	FileWrite($sWordsFileName, $newWord & @CRLF)
+EndFunc   ;==>_InsertWord
 
 Func OpenSettings()
-	$Form1_1 = GUICreate("Form1", 249, 335, 192, 124)
-	$Button1 = GUICtrlCreateButton("add", 40, 288, 65, 25)
-	$List1 = GUICtrlCreateList("", 24, 8, 201, 227,BitOR($WS_BORDER, $WS_VSCROLL))
-	$Button2 = GUICtrlCreateButton("Remove", 136, 288, 65, 25)
-	$Edit1 = GUICtrlCreateEdit("", 32, 256, 177, 25, BitOR($ES_AUTOVSCROLL,$ES_AUTOHSCROLL,$ES_WANTRETURN))
-	GUICtrlSetData(-1, "Edit1")
+	$SettingsForm = GUICreate("Word In Title Blocker", 249, 335, 192, 124)
+	$AddBtn = GUICtrlCreateButton("Add", 40, 288, 65, 25)
+	$WordsList = GUICtrlCreateList("", 24, 8, 201, 227, BitOR($WS_BORDER, $WS_VSCROLL))
+	$DeleteBtn = GUICtrlCreateButton("Remove", 136, 288, 65, 25)
+	$WordTextBoxEdit = GUICtrlCreateEdit("", 32, 256, 177, 25, BitOR($ES_AUTOVSCROLL, $ES_AUTOHSCROLL, $ES_WANTRETURN))
+	GUICtrlSetData($WordTextBoxEdit, "")
 	GUISetState(@SW_SHOW)
 
-	_reloadListBoxItems($List1, $words)
+	_ReloadListBoxItems($WordsList)
 
 	$windowIsHide = False
 
 	While 1
 		Sleep(10)
+
 		$nMsg = GUIGetMsg()
+
 		Switch $nMsg
 			Case $GUI_EVENT_CLOSE
-				;~ Exit
 				GUISetState(@SW_HIDE)
-				$windowIsHide = True				
+				$windowIsHide = True
 
 		EndSwitch
 
 		Select
-			Case $nMsg = $Button1
-				$newWords = GUICtrlRead($Edit1)
-				if $newWords <> "" Then
-					FileWrite("words.txt", $newWords & @CRLF)
+		
+			Case $nMsg = $AddBtn
+				$newWord = GUICtrlRead($WordTextBoxEdit)
+				If $newWord <> "" Then
+					_InsertWord($newWord, $aWords)
 				EndIf
-				_reloadListBoxItems($List1, $words)
+				_ReloadListBoxItems($WordsList)
 
 				;~ clear edit box after add
-				GUICtrlSetData($Edit1, "")
-			Case $nMsg = $Button2
-				;~ get selected item index in list box to remove
-				$selItems = _GUICtrlListBox_GetAnchorIndex($List1)
-				_ArrayDelete($words, $selItems)
-				;~ write to new words.txt
-				FileDelete("words.txt")
-				FileWrite("words.txt", _ArrayToString($words, @CRLF))
-				FileWrite("words.txt", @CRLF)
+				GUICtrlSetData($WordTextBoxEdit, "")
 
-				_reloadListBoxItems($List1, $words)
+			Case $nMsg = $DeleteBtn
+				;~ get selected item index in list box to remove
+				$selItems = _GUICtrlListBox_GetAnchorIndex($WordsList)
+				_ArrayDelete($aWords, $selItems)
+				;~ write to new words.txt
+				_SaveWordsToFile()
+
+				_ReloadListBoxItems($WordsList)
 
 		EndSelect
 
@@ -72,28 +87,41 @@ Func OpenSettings()
 			ExitLoop
 		EndIf
 	WEnd
-EndFunc
+EndFunc   ;==>OpenSettings
 
 
 ;~ #NoTrayIcon
 ;~ #RequireAdmin
 
 ;close the active window if contains the word
-Func checkWordInText($text)
-	For $w = 0 To UBound($words) - 1
-		If StringInStr($text, $words[$w]) Then
-			WinClose("[active]")
-			Return $words[$w]
+Func _CheckWordInText($text)
+	For $w = 0 To UBound($aWords) - 1
+		If StringInStr($text, $aWords[$w]) Then
+			Return $aWords[$w]
 		EndIf
 	Next
 	Return False
-EndFunc   ;==>checkWordInText
+EndFunc   ;==>_CheckWordInText
 
-While True
-	;~ loop every 1 second to check the active window title
-	ConsoleWrite(checkWordInText(WinGetTitle("[active]")) & @CRLF)
-	Sleep(1000)
-WEnd
+Func _CloseActiveWindow()
+	WinClose("[active]")
+EndFunc   ;==>_CloseActiveWindow
 
+Func _GetActiveWindowTitle()
+	Return WinGetTitle("[active]")
+EndFunc   ;==>_GetActiveWindowTitle
+
+Func Main()
+	While True
+		If _CheckWordInText(_GetActiveWindowTitle()) Then
+			_CloseActiveWindow()
+		EndIf
+
+		ConsoleWrite("Active Window ===> " & _GetActiveWindowTitle() & @CRLF)
+		Sleep(1000)
+	WEnd
+EndFunc   ;==>Main
+
+Main()
 
 
