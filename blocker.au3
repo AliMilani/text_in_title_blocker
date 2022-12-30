@@ -9,13 +9,19 @@
 $words = FileReadToArray("words.txt")
 $windowIsHide= True
 HotKeySet("{ESC}", "Close")
-HotKeySet("{F1}", "Settings")
+HotKeySet("{F1}", "OpenSettings")
 
 Func Close()
    Exit
 EndFunc
 
-Func Settings()
+Func _reloadListBoxItems($List1, $words)
+	GUICtrlSetData($List1, "")
+	GUICtrlSetData($List1, _ArrayToString($words, "|"))
+	_GUICtrlListBox_SetSel($List1)
+EndFunc
+
+Func OpenSettings()
 	$Form1_1 = GUICreate("Form1", 249, 335, 192, 124)
 	$Button1 = GUICtrlCreateButton("add", 40, 288, 65, 25)
 	$List1 = GUICtrlCreateList("", 24, 8, 201, 227,BitOR($WS_BORDER, $WS_VSCROLL))
@@ -26,9 +32,11 @@ Func Settings()
 	#EndRegion ### END Koda GUI section ###
 
 	;~ set list items from $words array
-	GUICtrlSetData($List1, _ArrayToString($words, "|"))
+	;~ GUICtrlSetData($List1, _ArrayToString($words, "|"))
+	;~ _GUICtrlListBox_SetSel($List1)
+	_reloadListBoxItems($List1, $words)
+
 	$windowIsHide = False
-	_GUICtrlListBox_SetSel($List1)
 
 	While 1
 		Sleep(10)
@@ -59,9 +67,11 @@ Func Settings()
 				;~ reload list
 				$words = FileReadToArray("words.txt")
 				;~ clear list box
-				GUICtrlSetData($List1, "")
-				GUICtrlSetData($List1, _ArrayToString($words, "|"))
-				_GUICtrlListBox_SetSel($List1)
+				;~ GUICtrlSetData($List1, "")
+				;~ GUICtrlSetData($List1, _ArrayToString($words, "|"))
+				;~ _GUICtrlListBox_SetSel($List1)
+				_reloadListBoxItems($List1, $words)
+
 				;~ clear edit box
 				GUICtrlSetData($Edit1, "")
 			Case $nMsg = $Button2
@@ -72,10 +82,12 @@ Func Settings()
 				;~ write to words.txt
 				FileDelete("words.txt")
 				FileWrite("words.txt", _ArrayToString($words, @CRLF))
+				FileWrite("words.txt", @CRLF)
 				;~ clear list
-				GUICtrlSetData($List1, "")
-				GUICtrlSetData($List1, _ArrayToString($words, "|"))
-				_GUICtrlListBox_SetSel($List1)
+				;~ GUICtrlSetData($List1, "")
+				;~ GUICtrlSetData($List1, _ArrayToString($words, "|"))
+				;~ _GUICtrlListBox_SetSel($List1)
+				_reloadListBoxItems($List1, $words)
 
 		EndSelect
 
